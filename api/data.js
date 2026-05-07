@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A2:I1000`,
+        range: `${SHEET_NAME}!A2:J1000`,
       });
       const rows = (response.data.values || [])
         .filter(row => row[2] && String(row[2]).trim() !== '')
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
           specialty: row[6] || '',
           tags:      row[7] || '',
           note:      row[8] || '',
+          link:      row[9] || '',
         }));
       return res.status(200).json({ status: 'ok', data: rows });
     }
@@ -48,12 +49,12 @@ export default async function handler(req, res) {
       if (body.action === 'add') {
         await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEET_NAME}!A:I`,
+          range: `${SHEET_NAME}!A:J`,
           valueInputOption: 'RAW',
           requestBody: {
             values: [[
               body.id, body.type, body.name, body.title,
-              body.email, body.phone, body.specialty, body.tags, body.note
+              body.email, body.phone, body.specialty, body.tags, body.note, body.link || ''
             ]],
           },
         });
