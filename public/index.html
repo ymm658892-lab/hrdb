@@ -34,7 +34,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
 .btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
 .btn-danger{color:#A32D2D}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
-.card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;transition:border-color .2s,box-shadow .2s}
+.card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;transition:border-color .2s,box-shadow .2s;cursor:pointer}
 .card:hover{border-color:#b5d4f4;box-shadow:0 2px 12px rgba(24,95,165,.08)}
 .card-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
@@ -83,6 +83,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .modal-footer{padding:1.25rem 1.5rem;border-top:1px solid #e5e5e3;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px}
 .gmail-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#E6F1FB;border-radius:8px;font-size:13px;color:#185FA5;margin-bottom:1.1rem}
+.detail-row{display:flex;gap:0;border-bottom:1px solid #f0f0ee}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-size:13px;color:#888;padding:11px 0;width:72px;flex-shrink:0}
+.detail-value{font-size:14px;color:#1a1a1a;padding:11px 0;flex:1;word-break:break-all}
 .empty{text-align:center;padding:4rem 1rem;color:#aaa;grid-column:1/-1}
 .empty-icon{font-size:48px;margin-bottom:12px}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid #b5d4f4;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
@@ -94,6 +98,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
   .stat-row{grid-template-columns:repeat(2,1fr)}
   .container{padding:1rem}
   .topbar{padding:0 1rem}
+  .toolbar{flex-wrap:wrap}
 }
 </style>
 </head>
@@ -139,7 +144,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
   <div id="tab-match" class="panel">
     <div class="match-box">
       <label>描述你的活動需求或合作條件</label>
-      <textarea id="match-query" placeholder="例：我需要一位能講 AI 應用與創業實戰的講師，適合中小企業主，時間約 2 小時，最好有輔導新創經驗..."></textarea>
+      <textarea id="match-query" placeholder="例：我需要一位能講 AI 應用與創業實戰的講師，適合中小企業主，時間約 2 小時..."></textarea>
       <div class="match-actions">
         <button class="btn" onclick="document.getElementById('match-query').value=''">清除</button>
         <button class="btn btn-primary" onclick="runMatch()">✨ AI 配對分析</button>
@@ -149,7 +154,22 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
   </div>
 </div>
 
-<!-- 新增聯絡人 -->
+<!-- 詳情 Modal -->
+<div class="modal-overlay" id="detail-modal" onclick="handleOverlayClick(event,'detail-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detail-modal-title">聯絡人詳情</h2>
+      <button class="btn btn-sm" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="detail-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('detail-modal')">關閉</button>
+      <button class="btn btn-primary" id="detail-email-btn">✉️ 寄信</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增聯絡人 Modal -->
 <div class="modal-overlay" id="add-modal" onclick="handleOverlayClick(event,'add-modal')">
   <div class="modal">
     <div class="modal-header">
@@ -175,6 +195,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
       <div class="field"><label>專長</label><input id="f-specialty" type="text" placeholder="AI應用, 新創輔導, 行銷策略"></div>
       <div class="field"><label>標籤（逗號分隔）</label><input id="f-tags" type="text" placeholder="政府標案, 企業內訓, ESG"></div>
       <div class="field"><label>備註</label><textarea id="f-note" placeholder="合作過的項目、特殊說明..."></textarea></div>
+      <div class="field"><label>個人網站／社群連結</label><input id="f-link" type="text" placeholder="https://www.example.com 或 IG、LinkedIn 連結"></div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('add-modal')">取消</button>
@@ -183,7 +204,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
   </div>
 </div>
 
-<!-- 寄信 -->
+<!-- 寄信 Modal -->
 <div class="modal-overlay" id="email-modal" onclick="handleOverlayClick(event,'email-modal')">
   <div class="modal">
     <div class="modal-header">
@@ -210,8 +231,6 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-
 <div class="toast" id="toast"></div>
 
 <script>
-const SHEETS_URL = 'REPLACE_SHEETS_URL';
-const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
 const TYPE_LABEL = {speaker:'講師／專家', vendor:'合作廠商', startup:'創業者'};
 const TYPE_AV    = {speaker:'av-blue', vendor:'av-teal', startup:'av-amber'};
 const TYPE_TAG   = {speaker:'tag-blue', vendor:'tag-teal', startup:'tag-amber'};
@@ -274,7 +293,7 @@ function renderCards(){
     const tg=TYPE_TAG[c.type]||'tag-gray';
     const tagHtml=c.tags?String(c.tags).split(',').map(t=>`<span class="tag ${tg}">${t.trim()}</span>`).join(''):'';
     const id=JSON.stringify(String(c.id));
-    return `<div class="card">
+    return `<div class="card" onclick="openDetail(${id})">
       <div class="card-head">
         <div class="avatar ${av}">${initials(c.name)}</div>
         <div>
@@ -285,7 +304,9 @@ function renderCards(){
       ${tagHtml?`<div class="tags">${tagHtml}</div>`:''}
       ${c.specialty?`<div class="card-meta">📌 ${c.specialty}</div>`:''}
       ${c.note?`<div class="card-note">${c.note}</div>`:''}
-      <div class="card-actions">
+      ${c.link?`<div style="margin-top:6px"><a href="${c.link}" target="_blank" onclick="event.stopPropagation()" style="font-size:12px;color:#185FA5;display:inline-flex;align-items:center;gap:4px;text-decoration:none">🔗 ${c.link.replace(/^https?:\/\//,'').split('/')[0]}</a></div>`:''}
+      <div class="card-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" onclick="openDetail(${id})">👁 詳情</button>
         <button class="btn btn-sm" onclick="openEmail(${id})">✉️ 寄信</button>
         <button class="btn btn-sm btn-danger" onclick="deleteContact(${id})" style="margin-left:auto">🗑</button>
       </div>
@@ -297,8 +318,36 @@ function openModal(id){document.getElementById(id).classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 function handleOverlayClick(e,id){if(e.target===document.getElementById(id))closeModal(id)}
 
+function openDetail(id){
+  const c=contacts.find(x=>String(x.id)===String(id));
+  if(!c)return;
+  const av=TYPE_AV[c.type]||'av-gray';
+  const tg=TYPE_TAG[c.type]||'tag-gray';
+  const tagHtml=c.tags?String(c.tags).split(',').map(t=>`<span class="tag ${tg}">${t.trim()}</span>`).join(''):'';
+  document.getElementById('detail-modal-title').textContent=c.name;
+  document.getElementById('detail-modal-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
+      <div class="avatar ${av}" style="width:60px;height:60px;font-size:20px;flex-shrink:0">${initials(c.name)}</div>
+      <div>
+        <div style="font-size:20px;font-weight:700">${c.name}</div>
+        <div style="color:#888;margin-top:4px;font-size:14px">${c.title||''}</div>
+        <div style="margin-top:6px"><span class="tag ${tg}">${TYPE_LABEL[c.type]||c.type}</span></div>
+      </div>
+    </div>
+    ${tagHtml?`<div class="tags" style="margin-bottom:1.25rem">${tagHtml}</div>`:''}
+    <div style="background:#f9f9f7;border-radius:10px;padding:0 1rem">
+      <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${c.email?`<a href="mailto:${c.email}" style="color:#185FA5">${c.email}</a>`:'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">電話</div><div class="detail-value">${c.phone||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">專長</div><div class="detail-value">${c.specialty||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">備註</div><div class="detail-value" style="white-space:pre-wrap">${c.note||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">連結</div><div class="detail-value">${c.link?`<a href="${c.link}" target="_blank" style="color:#185FA5;word-break:break-all">🔗 ${c.link}</a>`:'—'}</div></div>
+    </div>`;
+  document.getElementById('detail-email-btn').onclick=()=>{closeModal('detail-modal');openEmail(id);};
+  openModal('detail-modal');
+}
+
 function openAddModal(){
-  ['f-name','f-title','f-email','f-phone','f-specialty','f-tags','f-note'].forEach(id=>document.getElementById(id).value='');
+  ['f-name','f-title','f-email','f-phone','f-specialty','f-tags','f-note','f-link'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-type').value='speaker';
   openModal('add-modal');
 }
@@ -318,6 +367,7 @@ async function saveContact(){
     specialty:document.getElementById('f-specialty').value.trim(),
     tags:document.getElementById('f-tags').value.trim(),
     note:document.getElementById('f-note').value.trim(),
+    link:document.getElementById('f-link').value.trim(),
   };
   try{
     const res=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',...c})});
@@ -420,7 +470,8 @@ ${JSON.stringify(contacts.map(c=>({id:String(c.id),type:c.type,name:c.name,title
             <span class="score-num">${pct}%</span>
           </div>
           <div class="reason">${r.reason}</div>
-          <div style="margin-top:12px">
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="openDetail(${id})">👁 詳情</button>
             <button class="btn btn-primary btn-sm" onclick="openEmail(${id})">✉️ 立即邀約</button>
           </div>
         </div>`;
