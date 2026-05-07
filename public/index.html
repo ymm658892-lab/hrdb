@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人力資源資料庫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e3;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.topbar h1 span{color:#185FA5}
+.sync-row{display:flex;align-items:center;gap:10px}
+.dot{width:7px;height:7px;border-radius:50%;background:#ccc;transition:background .3s}
+.dot.ok{background:#1D9E75}
+.dot.err{background:#E24B4A}
+.sync-text{font-size:12px;color:#888}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;background:#E1F5EE;color:#0F6E56;padding:3px 10px;border-radius:20px;font-weight:500}
+.container{max-width:1100px;margin:0 auto;padding:1.5rem 2rem}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1rem 1.25rem}
+.stat-num{font-size:24px;font-weight:700;color:#1a1a1a}
+.stat-lbl{font-size:12px;color:#888;margin-top:3px}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem}
+.toolbar input{flex:1;border:1px solid #e5e5e3;border-radius:8px;padding:8px 14px;font-size:14px;font-family:inherit;background:#fff;outline:none;transition:border-color .15s}
+.toolbar input:focus{border-color:#185FA5}
+.toolbar select{border:1px solid #e5e5e3;border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;background:#fff;outline:none;cursor:pointer;min-width:140px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer;border:1px solid #e5e5e3;background:#fff;color:#1a1a1a;transition:background .15s,border-color .15s;white-space:nowrap}
+.btn:hover{background:#f5f5f3}
+.btn-primary{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn-primary:hover{background:#0C447C;border-color:#0C447C}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn-danger{color:#A32D2D}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:#fff;border-radius:12px;border:1px solid #e5e5e3;padding:1.25rem;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:#b5d4f4;box-shadow:0 2px 12px rgba(24,95,165,.08)}
+.card-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.av-blue{background:#E6F1FB;color:#0C447C}
+.av-teal{background:#E1F5EE;color:#085041}
+.av-amber{background:#FAEEDA;color:#633806}
+.av-gray{background:#F1EFE8;color:#444}
+.card-name{font-size:15px;font-weight:700;color:#1a1a1a}
+.card-sub{font-size:12px;color:#888;margin-top:2px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.tag{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.tag-blue{background:#E6F1FB;color:#185FA5}
+.tag-teal{background:#E1F5EE;color:#0F6E56}
+.tag-amber{background:#FAEEDA;color:#854F0B}
+.tag-gray{background:#F1EFE8;color:#5F5E5A}
+.card-meta{font-size:12px;color:#666;line-height:1.5}
+.card-note{font-size:12px;color:#888;margin-top:6px;line-height:1.5;padding-top:6px;border-top:1px solid #f0f0ee}
+.card-actions{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0ee}
+.tabs{display:flex;gap:2px;margin-bottom:1.5rem;background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:4px;width:fit-content}
+.tab{padding:7px 18px;border-radius:7px;font-size:14px;cursor:pointer;border:none;background:none;color:#888;font-family:inherit;transition:background .15s,color .15s}
+.tab.active{background:#185FA5;color:#fff;font-weight:500}
+.panel{display:none}.panel.active{display:block}
+.match-box{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+.match-box label{font-size:13px;color:#666;display:block;margin-bottom:8px;font-weight:500}
+.match-box textarea{width:100%;border:1px solid #e5e5e3;border-radius:8px;padding:12px;font-size:14px;font-family:inherit;resize:none;min-height:90px;outline:none;transition:border-color .15s}
+.match-box textarea:focus{border-color:#185FA5}
+.match-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.match-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:1rem}
+.match-card{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.25rem}
+.score-wrap{display:flex;align-items:center;gap:8px;margin:10px 0 6px}
+.score-bar-bg{flex:1;height:5px;background:#e5e5e3;border-radius:3px}
+.score-bar{height:5px;border-radius:3px;background:#185FA5;transition:width .4s}
+.score-num{font-size:12px;font-weight:700;color:#185FA5;min-width:32px;text-align:right}
+.reason{font-size:12px;color:#666;line-height:1.6}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:min(540px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #e5e5e3;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0}
+.modal-header h2{font-size:17px;font-weight:700}
+.modal-body{padding:1.5rem}
+.field{margin-bottom:1.1rem}
+.field label{font-size:13px;color:#555;display:block;margin-bottom:5px;font-weight:500}
+.field input,.field select,.field textarea{width:100%;border:1px solid #e5e5e3;border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#185FA5}
+.field textarea{resize:vertical;min-height:70px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{padding:1.25rem 1.5rem;border-top:1px solid #e5e5e3;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px}
+.gmail-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#E6F1FB;border-radius:8px;font-size:13px;color:#185FA5;margin-bottom:1.1rem}
+.empty{text-align:center;padding:4rem 1rem;color:#aaa;grid-column:1/-1}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid #b5d4f4;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:8px;padding:1rem;color:#888;font-size:14px}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 24px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{opacity:1}
+@media(max-width:600px){
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .container{padding:1rem}
+  .topbar{padding:0 1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>🗂 人力資源<span>資料庫</span></h1>
+  <div class="sync-row">
+    <span class="badge">📊 Google Sheets 同步</span>
+    <span class="dot" id="sync-dot"></span>
+    <span class="sync-text" id="sync-text">連線中...</span>
+    <button class="btn btn-sm" onclick="loadData(true)" title="重新整理">↺ 重新整理</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stat-row">
+    <div class="stat"><div class="stat-num" id="s-speaker">—</div><div class="stat-lbl">講師／專家</div></div>
+    <div class="stat"><div class="stat-num" id="s-vendor">—</div><div class="stat-lbl">合作廠商</div></div>
+    <div class="stat"><div class="stat-num" id="s-startup">—</div><div class="stat-lbl">創業者</div></div>
+    <div class="stat"><div class="stat-num" id="s-all">—</div><div class="stat-lbl">總人數</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="list">👥 聯絡人</button>
+    <button class="tab" data-tab="match">🤖 AI 智慧配對</button>
+  </div>
+
+  <div id="tab-list" class="panel active">
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="🔍 搜尋姓名、專長、標籤..." oninput="renderCards()">
+      <select id="type-filter" onchange="renderCards()">
+        <option value="">所有類型</option>
+        <option value="speaker">講師／專家</option>
+        <option value="vendor">合作廠商</option>
+        <option value="startup">創業者</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddModal()">＋ 新增聯絡人</button>
+    </div>
+    <div class="card-grid" id="card-grid"></div>
+  </div>
+
+  <div id="tab-match" class="panel">
+    <div class="match-box">
+      <label>描述你的活動需求或合作條件</label>
+      <textarea id="match-query" placeholder="例：我需要一位能講 AI 應用與創業實戰的講師，適合中小企業主，時間約 2 小時，最好有輔導新創經驗..."></textarea>
+      <div class="match-actions">
+        <button class="btn" onclick="document.getElementById('match-query').value=''">清除</button>
+        <button class="btn btn-primary" onclick="runMatch()">✨ AI 配對分析</button>
+      </div>
+    </div>
+    <div id="match-results-area"></div>
+  </div>
+</div>
+
+<!-- 新增聯絡人 -->
+<div class="modal-overlay" id="add-modal" onclick="handleOverlayClick(event,'add-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增聯絡人</h2>
+      <button class="btn btn-sm" onclick="closeModal('add-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>類型</label>
+        <select id="f-type">
+          <option value="speaker">講師／專家</option>
+          <option value="vendor">合作廠商</option>
+          <option value="startup">創業者</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>姓名</label><input id="f-name" type="text" placeholder="王小明"></div>
+        <div class="field"><label>職稱</label><input id="f-title" type="text" placeholder="資深講師"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Email</label><input id="f-email" type="email" placeholder="name@example.com"></div>
+        <div class="field"><label>電話</label><input id="f-phone" type="text" placeholder="0912-345-678"></div>
+      </div>
+      <div class="field"><label>專長</label><input id="f-specialty" type="text" placeholder="AI應用, 新創輔導, 行銷策略"></div>
+      <div class="field"><label>標籤（逗號分隔）</label><input id="f-tags" type="text" placeholder="政府標案, 企業內訓, ESG"></div>
+      <div class="field"><label>備註</label><textarea id="f-note" placeholder="合作過的項目、特殊說明..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('add-modal')">取消</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveContact()">💾 儲存到試算表</button>
+    </div>
+  </div>
+</div>
+
+<!-- 寄信 -->
+<div class="modal-overlay" id="email-modal" onclick="handleOverlayClick(event,'email-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="email-title">寄送邀約信</h2>
+      <button class="btn btn-sm" onclick="closeModal('email-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="gmail-banner">📧 將在 Gmail 開啟草稿，可直接修改後寄出</div>
+      <div class="field"><label>收件人</label><input id="em-to" type="email" readonly style="background:#f5f5f3"></div>
+      <div class="field"><label>主旨</label><input id="em-subject" type="text"></div>
+      <div class="field"><label>信件內容（可直接編輯）</label>
+        <textarea id="em-body" style="min-height:260px;font-size:13px;line-height:1.7"></textarea>
+      </div>
+      <div id="email-loading" class="loading-row" style="display:none"><div class="spinner"></div>AI 正在生成信件內容...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="regenerateEmail()">↺ 重新生成</button>
+      <button class="btn" onclick="copyEmail()">📋 複製</button>
+      <button class="btn btn-primary" onclick="openGmail()">📤 在 Gmail 開啟</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEETS_URL = 'REPLACE_SHEETS_URL';
+const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+const TYPE_LABEL = {speaker:'講師／專家', vendor:'合作廠商', startup:'創業者'};
+const TYPE_AV    = {speaker:'av-blue', vendor:'av-teal', startup:'av-amber'};
+const TYPE_TAG   = {speaker:'tag-blue', vendor:'tag-teal', startup:'tag-amber'};
+let contacts = [];
+let emailTarget = null;
+
+function showToast(msg,dur=2400){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+function setSyncStatus(ok,msg){
+  const dot=document.getElementById('sync-dot');
+  dot.className='dot '+(ok?'ok':'err');
+  document.getElementById('sync-text').textContent=msg;
+}
+
+async function loadData(showMsg=false){
+  setSyncStatus(true,'連線中...');
+  try{
+    const res=await fetch('/api/data');
+    const data=await res.json();
+    if(data.status==='ok'){
+      contacts=(data.data||[]).filter(c=>c.name&&String(c.name).trim()!=='');
+      renderCards();updateStats();
+      const now=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+      setSyncStatus(true,'上次同步 '+now);
+      if(showMsg)showToast('已載入 '+contacts.length+' 筆資料 ✓');
+    }else throw new Error();
+  }catch(e){
+    setSyncStatus(false,'同步失敗');
+    if(showMsg)showToast('連線失敗，請確認設定');
+  }
+}
+
+function updateStats(){
+  ['speaker','vendor','startup'].forEach(t=>{
+    document.getElementById('s-'+t).textContent=contacts.filter(c=>c.type===t).length;
+  });
+  document.getElementById('s-all').textContent=contacts.length;
+}
+
+function initials(n){return String(n).slice(0,2)}
+
+function renderCards(){
+  const q=document.getElementById('search-input').value.toLowerCase();
+  const tf=document.getElementById('type-filter').value;
+  const list=contacts.filter(c=>{
+    const mt=!tf||c.type===tf;
+    const mq=!q||[c.name,c.title,c.specialty,c.tags,c.note].join(' ').toLowerCase().includes(q);
+    return mt&&mq;
+  });
+  const grid=document.getElementById('card-grid');
+  if(!list.length){
+    grid.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>找不到符合的聯絡人<br><small>在 Google Sheets 新增資料後按重新整理</small></div>';
+    return;
+  }
+  grid.innerHTML=list.map(c=>{
+    const av=TYPE_AV[c.type]||'av-gray';
+    const tg=TYPE_TAG[c.type]||'tag-gray';
+    const tagHtml=c.tags?String(c.tags).split(',').map(t=>`<span class="tag ${tg}">${t.trim()}</span>`).join(''):'';
+    const id=JSON.stringify(String(c.id));
+    return `<div class="card">
+      <div class="card-head">
+        <div class="avatar ${av}">${initials(c.name)}</div>
+        <div>
+          <div class="card-name">${c.name}</div>
+          <div class="card-sub">${c.title||''} · <span class="tag ${tg}" style="padding:1px 8px">${TYPE_LABEL[c.type]||c.type}</span></div>
+        </div>
+      </div>
+      ${tagHtml?`<div class="tags">${tagHtml}</div>`:''}
+      ${c.specialty?`<div class="card-meta">📌 ${c.specialty}</div>`:''}
+      ${c.note?`<div class="card-note">${c.note}</div>`:''}
+      <div class="card-actions">
+        <button class="btn btn-sm" onclick="openEmail(${id})">✉️ 寄信</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteContact(${id})" style="margin-left:auto">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function handleOverlayClick(e,id){if(e.target===document.getElementById(id))closeModal(id)}
+
+function openAddModal(){
+  ['f-name','f-title','f-email','f-phone','f-specialty','f-tags','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type').value='speaker';
+  openModal('add-modal');
+}
+
+async function saveContact(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){showToast('請填寫姓名');return;}
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='儲存中...';
+  const c={
+    id:Date.now(),
+    type:document.getElementById('f-type').value,
+    name,
+    title:document.getElementById('f-title').value.trim(),
+    email:document.getElementById('f-email').value.trim(),
+    phone:document.getElementById('f-phone').value.trim(),
+    specialty:document.getElementById('f-specialty').value.trim(),
+    tags:document.getElementById('f-tags').value.trim(),
+    note:document.getElementById('f-note').value.trim(),
+  };
+  try{
+    const res=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',...c})});
+    const data=await res.json();
+    if(data.status!=='ok')throw new Error();
+    contacts.unshift(c);renderCards();updateStats();
+    closeModal('add-modal');showToast('已儲存到 Google Sheets ✓');
+  }catch(e){showToast('儲存失敗，請稍後再試');}
+  finally{btn.disabled=false;btn.textContent='💾 儲存到試算表';}
+}
+
+async function deleteContact(id){
+  if(!confirm('確定刪除？這筆資料會從 Google Sheets 一併移除。'))return;
+  try{
+    const res=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',id})});
+    const data=await res.json();
+    if(data.status!=='ok')throw new Error();
+    contacts=contacts.filter(c=>String(c.id)!==String(id));
+    renderCards();updateStats();showToast('已刪除 ✓');
+  }catch(e){showToast('刪除失敗，請直接在試算表刪除');}
+}
+
+async function openEmail(id){
+  emailTarget=contacts.find(c=>String(c.id)===String(id));
+  if(!emailTarget)return;
+  document.getElementById('email-title').textContent='寄信給 '+emailTarget.name;
+  document.getElementById('em-to').value=emailTarget.email||'';
+  document.getElementById('em-subject').value='【邀約】'+emailTarget.name+(emailTarget.title?' '+emailTarget.title:'')+'合作邀請';
+  document.getElementById('em-body').value='';
+  document.getElementById('email-loading').style.display='flex';
+  openModal('email-modal');
+  await generateEmailContent();
+  document.getElementById('email-loading').style.display='none';
+}
+
+async function generateEmailContent(){
+  const c=emailTarget;
+  const prompt=`你是一位專業的活動企劃，請幫我撰寫一封給${TYPE_LABEL[c.type]||'聯絡人'}的中文邀約信。
+對象：${c.name}／${c.title||''}
+專長：${c.specialty||''}
+標籤：${c.tags||''}
+備註：${c.note||''}
+請撰寫誠懇、專業的邀約信，含開場問候、自我介紹（用[您的名稱/單位]佔位）、邀約目的（用[活動名稱/日期/地點]佔位）、合作誠意、結語。語氣正式親切，約200-300字。只輸出信件內文。`;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    document.getElementById('em-body').value=data.text||'';
+  }catch(e){
+    document.getElementById('em-body').value='敬啟者，\n\n您好，我是[您的名稱]，來自[您的單位]。\n\n我們正在籌備[活動名稱]，誠摯邀請您擔任[角色]，活動預計於[日期]在[地點]舉行。\n\n期盼與您進一步洽談，請撥冗回覆，感謝！\n\n敬祝　商祺\n[您的署名]';
+  }
+}
+
+async function regenerateEmail(){
+  document.getElementById('email-loading').style.display='flex';
+  document.getElementById('em-body').value='';
+  await generateEmailContent();
+  document.getElementById('email-loading').style.display='none';
+}
+
+function copyEmail(){
+  navigator.clipboard.writeText(document.getElementById('em-body').value).then(()=>showToast('已複製信件內容 ✓'));
+}
+
+function openGmail(){
+  const to=document.getElementById('em-to').value;
+  const sub=encodeURIComponent(document.getElementById('em-subject').value);
+  const bod=encodeURIComponent(document.getElementById('em-body').value);
+  window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+to+'&su='+sub+'&body='+bod,'_blank');
+}
+
+async function runMatch(){
+  const q=document.getElementById('match-query').value.trim();
+  if(!q){showToast('請輸入需求描述');return;}
+  if(!contacts.length){showToast('尚無資料，請先按重新整理');return;}
+  const area=document.getElementById('match-results-area');
+  area.innerHTML='<div class="loading-row"><div class="spinner"></div>AI 分析配對中...</div>';
+  const prompt=`聯絡人資料庫：
+${JSON.stringify(contacts.map(c=>({id:String(c.id),type:c.type,name:c.name,title:c.title,specialty:c.specialty,tags:c.tags,note:c.note})))}
+需求：${q}
+從資料庫選出最適合的1-3人，JSON陣列：[{"id":"id值","score":0到100整數,"reason":"30字內原因"}]
+只輸出JSON。`;
+  try{
+    const res=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await res.json();
+    const results=JSON.parse(data.text.replace(/```json|```/g,'').trim());
+    if(!results.length){area.innerHTML='<div class="empty"><div class="empty-icon">😔</div>找不到符合的聯絡人</div>';return;}
+    area.innerHTML='<div style="font-size:13px;color:#888;margin-bottom:12px">✨ AI 推薦結果</div><div class="match-results">'+
+      results.map(r=>{
+        const c=contacts.find(x=>String(x.id)===String(r.id));
+        if(!c)return '';
+        const pct=Math.min(100,Math.max(0,r.score));
+        const id=JSON.stringify(String(c.id));
+        return `<div class="match-card">
+          <div class="card-head">
+            <div class="avatar ${TYPE_AV[c.type]||'av-gray'}">${initials(c.name)}</div>
+            <div><div class="card-name">${c.name}</div><div class="card-sub">${c.title||''}</div></div>
+          </div>
+          <div class="score-wrap">
+            <div class="score-bar-bg"><div class="score-bar" style="width:${pct}%"></div></div>
+            <span class="score-num">${pct}%</span>
+          </div>
+          <div class="reason">${r.reason}</div>
+          <div style="margin-top:12px">
+            <button class="btn btn-primary btn-sm" onclick="openEmail(${id})">✉️ 立即邀約</button>
+          </div>
+        </div>`;
+      }).join('')+'</div>';
+  }catch(e){
+    area.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div>配對失敗，請稍後重試</div>';
+  }
+}
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+}));
+
+loadData(true);
+</script>
+</body>
+</html>
